@@ -24,10 +24,16 @@ Load plan, review critically, execute all tasks, report when complete.
 ### Step 2: Execute Tasks
 
 For each task:
-1. Mark as in_progress
-2. Follow each step exactly (plan has bite-sized steps)
-3. Run verifications as specified
-4. Mark as completed
+1. Record BASE_SHA
+2. Mark as in_progress
+3. Follow skeleton/test/lock/implementation steps exactly
+4. Run verifications as specified
+5. After tests are locked, do not modify locked test files
+6. If a locked test appears wrong, stop and produce Test Amendment Request
+7. Before marking completed, audit:
+   - locked test files changed after lock: none
+   - all test changes after lock have approved amendment
+8. Mark as completed
 
 ### Step 3: Complete Development
 
@@ -43,6 +49,10 @@ After all tasks complete and verified:
 - Plan has critical gaps preventing starting
 - You don't understand an instruction
 - Verification fails repeatedly
+- A locked test needs to be changed
+- A test file changed after TEST_LOCK_SHA without explicit amendment approval
+- A RED test fails because symbols/imports/build targets are missing
+- The plan asks you to write tests against APIs not present in a skeleton
 
 **Ask for clarification rather than guessing.**
 
@@ -51,6 +61,7 @@ After all tasks complete and verified:
 **Return to Review (Step 1) when:**
 - Partner updates the plan based on your feedback
 - Fundamental approach needs rethinking
+- Plan lacks required skeleton-before-test or test-lock steps
 
 **Don't force through blockers** - stop and ask.
 
@@ -61,6 +72,7 @@ After all tasks complete and verified:
 - Reference skills when plan says to
 - Stop when blocked, don't guess
 - Never start implementation on main/master branch without explicit user consent
+- A locked test is a contract, not implementation cleanup
 
 ## Integration
 
