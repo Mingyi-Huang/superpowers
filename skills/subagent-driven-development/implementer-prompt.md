@@ -20,6 +20,8 @@ Task tool (general-purpose):
 
     If you have questions about:
     - The requirements or acceptance criteria
+    - The behavior contract
+    - The Glossary Contract or allowed terminology
     - The approach or implementation strategy
     - Dependencies or assumptions
     - Anything unclear in the task description
@@ -29,17 +31,38 @@ Task tool (general-purpose):
     ## Your Job
 
     Once you're clear on requirements:
-    1. Implement exactly what the task specifies
-    2. Write tests (following TDD if task says to)
-    3. Verify implementation works
-    4. Commit your work
-    5. Self-review (see below)
-    6. Report back
+    1. Confirm glossary terms and behavior contract
+    2. Create/confirm interface skeleton if the task introduces new production symbols
+    3. Write or use locked tests according to the plan
+    4. Verify RED tests compile and fail for behavioral reasons
+    5. Lock tests before implementation
+    6. Implement production code only
+    7. Verify tests pass
+    8. Audit that locked test files were not modified
+    9. Commit your work
+    10. Self-review (see below)
+    11. Report back
 
     Work from: [directory]
 
     **While you work:** If you encounter something unexpected or unclear, **ask questions**.
     It's always OK to pause and clarify. Don't guess or make assumptions.
+
+    ## Locked Test Rule
+
+    Once a test is locked, you MUST NOT modify it during implementation.
+
+    Forbidden:
+    - deleting tests
+    - skipping tests
+    - weakening assertions
+    - changing expected values
+    - changing mocks/fakes to make production pass
+    - renaming tests to avoid execution
+    - changing test scope
+    - editing test files and production files in the same GREEN step
+
+    If the locked test appears wrong, report TEST_AMENDMENT_REQUIRED and include a Test Amendment Request.
 
     ## Code Organization
 
@@ -65,11 +88,15 @@ Task tool (general-purpose):
     - You feel uncertain about whether your approach is correct
     - The task involves restructuring existing code in ways the plan didn't anticipate
     - You've been reading file after file trying to understand the system without progress
+    - A locked test needs to change
+    - A test failure can only be resolved by weakening an assertion or expected behavior
+    - A new production symbol is required but not present in the skeleton
+    - A new domain term appears that is not in the Glossary Contract
 
-    **How to escalate:** Report back with status BLOCKED or NEEDS_CONTEXT. Describe
-    specifically what you're stuck on, what you've tried, and what kind of help you need.
+    **How to escalate:** Report back with status BLOCKED, NEEDS_CONTEXT, or TEST_AMENDMENT_REQUIRED.
+    Describe specifically what you're stuck on, what you've tried, and what kind of help you need.
     The controller can provide more context, re-dispatch with a more capable model,
-    or break the task into smaller pieces.
+    break the task into smaller pieces, or present the amendment request to the human partner.
 
     ## Before Reporting Back: Self-Review
 
@@ -89,25 +116,35 @@ Task tool (general-purpose):
     - Did I avoid overbuilding (YAGNI)?
     - Did I only build what was requested?
     - Did I follow existing patterns in the codebase?
+    - Did I keep glossary terms consistent?
 
     **Testing:**
     - Do tests actually verify behavior (not just mock behavior)?
     - Did I follow TDD if required?
+    - Did RED compile/import/build before implementation?
+    - Did RED fail for behavior-not-implemented, not missing symbols?
     - Are tests comprehensive?
+    - Did locked test files remain unchanged after TEST_LOCK_SHA?
 
-    If you find issues during self-review, fix them now before reporting.
+    If you find issues during self-review, fix production issues now before reporting.
+    Do not fix a locked-test issue by editing the test; report TEST_AMENDMENT_REQUIRED.
 
     ## Report Format
 
     When done, report:
-    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT | TEST_AMENDMENT_REQUIRED
     - What you implemented (or what you attempted, if blocked)
-    - What you tested and test results
-    - Files changed
-    - Self-review findings (if any)
+    - Behavior contract item implemented
+    - Tests run and results
+    - TEST_LOCK_SHA
+    - Locked test files
+    - Files changed after test lock
+    - Confirmation: "Locked test files changed after lock: none" OR Test Amendment Request
+    - Self-review findings
     - Any issues or concerns
 
     Use DONE_WITH_CONCERNS if you completed the work but have doubts about correctness.
     Use BLOCKED if you cannot complete the task. Use NEEDS_CONTEXT if you need
-    information that wasn't provided. Never silently produce work you're unsure about.
+    information that wasn't provided. Use TEST_AMENDMENT_REQUIRED if a locked test must change.
+    Never silently produce work you're unsure about.
 ```
