@@ -53,9 +53,19 @@ Task tool (general-purpose):
     - Did they solve the wrong problem?
     - Did they implement the right feature but wrong way?
 
+    ## Test Contract Compliance
+
+    Also verify:
+    - The implementation did not satisfy the task by weakening tests.
+    - Any changed test file is either pre-lock RED work or has an approved Test Amendment Request.
+    - The implemented behavior matches the Behavior Contract, not merely the current assertions.
+    - New names and APIs match the Glossary Contract.
+
+    If tests changed after TEST_LOCK_SHA without approval, report ❌ Issues found even if all tests pass.
+
     **Verify by reading code, not by trusting report.**
 
     Report:
     - ✅ Spec compliant (if everything matches after code inspection)
-    - ❌ Issues found: [list specifically what's missing or extra, with file:line references]
+    - ❌ Issues found: [list specifically what's missing, extra, or contract-breaking, with file:line references]
 ```
