@@ -9,6 +9,15 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
 
+Plans use Contract-Driven TDD:
+1. Lock terminology from the Glossary Contract
+2. Define behavior contract per slice
+3. Create or confirm interface skeleton before tests
+4. Write tests only against existing production symbols
+5. Verify tests compile and fail for behavioral reasons
+6. Lock tests before implementation
+7. Implementation may not modify locked tests
+
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
@@ -33,13 +42,35 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
+## Interface Skeleton First
+
+Before writing failing tests for a new public API, add a skeleton step.
+
+Skeleton steps MAY create:
+- class/struct/enum declarations
+- function/method signatures
+- empty implementations
+- explicit `not implemented` behavior
+- build-system entries needed for compilation
+
+Skeleton steps MUST NOT add:
+- real business logic
+- hidden behavior
+- broad refactors
+- production shortcuts that make tests pass accidentally
+
+The skeleton must compile before tests are written.
+
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
-- "Write the failing test" - step
-- "Run it to make sure it fails" - step
-- "Implement the minimal code to make the test pass" - step
-- "Run the tests and make sure they pass" - step
+- "Define or confirm interface skeleton" - step
+- "Verify the skeleton compiles/imports/builds" - step
+- "Write one failing behavioral test" - step
+- "Run it to make sure it fails for the expected behavioral reason" - step
+- "Lock the test" - step
+- "Implement the minimal production code to make the test pass" - step
+- "Audit locked tests after implementation" - step
 - "Commit" - step
 
 ## Plan Document Header
@@ -63,14 +94,30 @@ This structure informs the task decomposition. Each task should produce self-con
 ## Task Structure
 
 ````markdown
-### Task N: [Component Name]
+### Task N: [Behavior Slice Name]
+
+**Behavior Contract:**
+- Glossary terms used: [...]
+- Behavior under test: [...]
+- Non-goals: [...]
 
 **Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
+- Create/Modify production skeleton: `exact/path/to/file.py`
 - Test: `tests/exact/path/to/test.py`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 0: Define or confirm interface skeleton**
+
+```python
+def function(input):
+    raise NotImplementedError("behavior not implemented")
+```
+
+- [ ] **Step 1: Verify skeleton compiles**
+
+Run: `python -m py_compile exact/path/to/file.py`
+Expected: PASS compilation / import / build
+
+- [ ] **Step 2: Write one failing behavioral test**
 
 ```python
 def test_specific_behavior():
@@ -78,28 +125,62 @@ def test_specific_behavior():
     assert result == expected
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+Test Review Manifest:
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
+Behavior under test:
+Given:
+When:
+Then:
+Expected initial failure:
+Production symbols used:
+Test-only symbols used:
+This test must not verify:
 
-- [ ] **Step 3: Write minimal implementation**
+- [ ] **Step 3: Run test to verify behavioral failure**
+
+Run: `pytest tests/path/test.py::test_specific_behavior -v`
+Expected: FAIL because behavior is not implemented, not because symbols/types are missing.
+Forbidden: failure due to missing symbol, import error, fixture error, typo, or compilation error.
+
+- [ ] **Step 4: Lock test**
+
+Record:
+
+```bash
+Locked test files: tests/path/test.py
+TEST_LOCK_SHA=$(git rev-parse HEAD)
+Expected failing tests: tests/path/test.py::test_specific_behavior
+```
+
+- [ ] **Step 5: Write minimal production implementation**
+
+Do not modify locked test files. If a test appears wrong, stop and file a Test Amendment Request.
 
 ```python
 def function(input):
     return expected
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 6: Run test to verify it passes**
 
-Run: `pytest tests/path/test.py::test_name -v`
+Run: `pytest tests/path/test.py::test_specific_behavior -v`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Audit locked tests**
+
+Run:
 
 ```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
+git diff --name-only TEST_LOCK_SHA..HEAD -- '*test*' 'tests/**'
+```
+
+Expected: no locked test files changed after TEST_LOCK_SHA.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add tests/path/test.py exact/path/to/file.py
+git commit -m "feat: add specific behavior"
 ```
 ````
 
@@ -113,11 +194,20 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Steps that describe what to do without showing how (code blocks required for code steps)
 - References to types, functions, or methods not defined in any task
 
+These are also plan failures:
+- A RED test whose expected failure is "function not defined"
+- A test that uses production symbols not present in the interface skeleton
+- A test that cannot compile/import before implementation
+- A test task that requires reviewing future classes/functions not yet declared
+- A task that modifies tests and production code in the same step after test lock
+
 ## Remember
 - Exact file paths always
 - Complete code in every step — if a step changes code, show the code
 - Exact commands with expected output
 - DRY, YAGNI, TDD, frequent commits
+- Skeleton before behavioral RED test for new production APIs
+- Locked tests are contracts; implementation steps must not modify them
 
 ## Self-Review
 
@@ -128,6 +218,14 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **2. Placeholder scan:** Search your plan for red flags — any of the patterns from the "No Placeholders" section above. Fix them.
 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
+
+**4. Glossary consistency:** Do task names, API names, test names, and descriptions use canonical glossary terms?
+
+**5. Skeleton-before-test:** Does every test that uses new production symbols have an earlier skeleton step?
+
+**6. Behavioral RED:** Does every failing test fail for behavior-not-implemented, not missing symbol/import/build failure?
+
+**7. Test lock:** Does every implementation step specify that locked tests must not be modified?
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
